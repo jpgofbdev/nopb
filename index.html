@@ -282,7 +282,7 @@
       const bundle = await duckdb.selectBundle(DUCKDB_BUNDLES);
 
       // IMPORTANT: this is exactly what fails under Live Server in many setups
-      const worker = new Worker(bundle.mainWorker);
+      const worker = new Worker(bundle.mainWorker, { type: "module" });
 
       const logger = new duckdb.ConsoleLogger();
       const db = new duckdb.AsyncDuckDB(logger, worker);
@@ -346,6 +346,7 @@
 
       } catch (e) {
         console.warn("DuckDB indisponible, fallback GeoJSON.", e);
+        console.warn("Vérifie que les fichiers .geojson existent bien dans ./data/ (GitHub Pages est sensible à la casse des noms de fichiers).");
         setModeHint("Mode : GeoJSON (fallback – compatible Live Server).");
         setStatus("Chargement : tampon 100 m (geojson)…");
         tamponLayer = await loadGeoJSONLayer(TAMPON_GEOJSON_URL, "tamponPane", styleTampon);
