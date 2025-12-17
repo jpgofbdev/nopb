@@ -156,58 +156,95 @@
   function readDouble(dv, o, le){ return dv.getFloat64(o, le); }
 
   function parseWKB(uint8){
-    const dv = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
-    let o = 0;
-    const le = dv.getUint8(o) === 1; o += 1;
-    const type = readUInt32(dv, o, le); o += 4;
+  const dv = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
+  let o = 0;
 
-    // WKB types: 3=Polygon, 6=MultiPolygon
-    if(type === 3){
-      const nr = readUInt32(dv, o, le); o += 4;
+  const le = dv.getUint8(o) === 1; o += 1;
+
+  let type = dv.getUint32(o, le); o += 4;
+
+  // EWKB flags (PostGIS):
+  // 0x20000000 = SRID present
+  // 0x80000000 = Z
+  // 0x40000000 = M
+  const hasZ    = (type & 0x80000000) !== 0;
+  const hasM    = (type & 0x40000000) !== 0;
+  const hasSRID = (type & 0x20000000) !== 0;
+
+  const baseType = (type & 0x0fffffff);
+
+  // read SRID if present (we ignore it for display)
+  if (hasSRID) { o += 4; }
+
+  const dims = 2 + (hasZ ? 1 : 0) + (hasM ? 1 : 0);
+
+  function readPoint(){
+    const x = dv.getFloat64(o, le); o += 8;
+    const y = dv.getFloat64(o, le); o += 8;
+    // skip Z/M if present
+    for (let k = 2; k < dims; k++) { o += 8; }
+    return [x, y];
+  }
+
+  function readPolygon(){
+    const nr = dv.getUint32(o, le); o += 4;
+    const rings = [];
+    for (let r=0; r<nr; r++){
+      const np = dv.getUint32(o, le); o += 4;
+      const ring = new Array(np);
+      for (let i=0; i<np; i++){
+        ring[i] = readPoint();
+      }
+      rings.push(ring);
+    }
+    return rings;
+  }
+
+  if (baseType === 3) {
+    return { type: "Polygon", coordinates: readPolygon() };
+  }
+
+  if (baseType === 6) {
+    const n = dv.getUint32(o, le); o += 4;
+    const polys = [];
+    for (let p=0; p<n; p++){
+      // each polygon is a complete (E)WKB geometry
+      const subLe = dv.getUint8(o) === 1;
+      let subType = dv.getUint32(o+1, subLe);
+
+      const subHasZ    = (subType & 0x80000000) !== 0;
+      const subHasM    = (subType & 0x40000000) !== 0;
+      const subHasSRID = (subType & 0x20000000) !== 0;
+      const subBase    = (subType & 0x0fffffff);
+      if (subBase !== 3) throw new Error("MultiPolygon contient un type non-Polygon");
+
+      // advance into sub-geometry
+      o += 1 + 4;
+      if (subHasSRID) { o += 4; }
+
+      const subDims = 2 + (subHasZ ? 1 : 0) + (subHasM ? 1 : 0);
+
+      const nr = dv.getUint32(o, subLe); o += 4;
       const rings = [];
-      for(let r=0;r<nr;r++){
-        const np = readUInt32(dv, o, le); o += 4;
+      for (let r=0; r<nr; r++){
+        const np = dv.getUint32(o, subLe); o += 4;
         const ring = new Array(np);
-        for(let i=0;i<np;i++){
-          const x = readDouble(dv, o, le); o += 8;
-          const y = readDouble(dv, o, le); o += 8;
+        for (let i=0; i<np; i++){
+          const x = dv.getFloat64(o, subLe); o += 8;
+          const y = dv.getFloat64(o, subLe); o += 8;
+          for (let k=2; k<subDims; k++) { o += 8; }
           ring[i] = [x, y];
         }
         rings.push(ring);
       }
-      return { type:"Polygon", coordinates:rings };
+      polys.push(rings);
     }
-
-    if(type === 6){
-      const n = readUInt32(dv, o, le); o += 4;
-      const polys = [];
-      for(let p=0;p<n;p++){
-        // chaque polygon est lui-même un WKB complet
-        const subLe = dv.getUint8(o) === 1;
-        // type + rings
-        const subType = dv.getUint32(o+1, subLe);
-        if(subType !== 3) throw new Error("MultiPolygon contient un type non-Polygon");
-        const subLenStart = o; // on parse en avançant o
-        o += 1 + 4;
-        const nr = dv.getUint32(o, subLe); o += 4;
-        const rings = [];
-        for(let r=0;r<nr;r++){
-          const np = dv.getUint32(o, subLe); o += 4;
-          const ring = new Array(np);
-          for(let i=0;i<np;i++){
-            const x = dv.getFloat64(o, subLe); o += 8;
-            const y = dv.getFloat64(o, subLe); o += 8;
-            ring[i] = [x,y];
-          }
-          rings.push(ring);
-        }
-        polys.push(rings);
-      }
-      return { type:"MultiPolygon", coordinates:polys };
-    }
-
-    throw new Error(`WKB type non géré: ${type} (attendu Polygon=3 ou MultiPolygon=6)`);
+    return { type: "MultiPolygon", coordinates: polys };
   }
+
+  throw new Error(`WKB type non géré: ${type} (baseType=${baseType})`);
+}
+
 
   /********************
    * DUCKDB-WASM (MVP ONLY) + Parquet
