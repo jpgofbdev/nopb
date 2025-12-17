@@ -153,13 +153,16 @@ const db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
 await db.instantiate(bundle.mainModule);
 const conn = await db.connect();
 
-await conn.query("SET home_directory='/tmp';");
+await db.registerFileText("tmp/.keep", "");
+
+await conn.query("SET home_directory='tmp';");
+
 await conn.query("INSTALL spatial;");
 await conn.query("LOAD spatial;");
 
+
   
-await conn.query("INSTALL spatial;");
-await conn.query("LOAD spatial;");
+
 async function loadParquet(url, pane, style) {
   const buf = new Uint8Array(await (await fetch(url)).arrayBuffer());
   await db.registerFileBuffer(url, buf);
