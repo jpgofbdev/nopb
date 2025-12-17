@@ -6,73 +6,31 @@
   <title>NoPb – Plans d’eau</title>
   <link rel="icon" href="data:,">
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
   <style>
-    html, body { height:100%; margin:0; font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    html, body { height:100%; margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
     #app { height:100%; display:grid; grid-template-rows:52px 1fr; }
-
-    header {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:0 12px; background:#fff; border-bottom:1px solid #e6e6e6;
-    }
-    .brand { display:flex; gap:10px; align-items:baseline; }
-    .title { font-weight:750; font-size:18px; letter-spacing:0.2px; }
-    .subtitle { font-size:12px; color:#666; }
-    .toplinks a {
-      margin-left:6px; text-decoration:none; border:1px solid #ddd;
-      border-radius:8px; padding:4px 7px; background:#fff;
-    }
-    .toplinks a:hover { background:#f6f6f6; }
-
-    #map { width:100%; height:100%; }
-
-    .panel {
-      position:absolute; left:12px; top:70px; z-index:1000;
-      background:#fff; border:1px solid #cfcfcf; border-radius:10px;
-      padding:10px; width:250px; box-shadow:0 6px 18px rgba(0,0,0,0.06);
-    }
-    .panel button {
-      width:100%; padding:8px 10px; border-radius:8px;
-      border:1px solid #cfcfcf; background:#fff; cursor:pointer;
-      font-weight:600;
-    }
-    .panel button:hover { background:#f6f6f6; }
-    .status { margin-top:8px; font-size:12px; line-height:1.35; color:#333; }
-
-    .afficher {
-      position:absolute; right:12px; top:70px; z-index:1000;
-      background:#fff; border:1px solid #cfcfcf; border-radius:10px;
-      padding:10px; width:170px; box-shadow:0 6px 18px rgba(0,0,0,0.06);
-      font-size:13px;
-    }
-
-    .searchBox {
-      position:absolute; right:12px; bottom:18px; z-index:1000;
-      background:#fff; border:1px solid #cfcfcf; border-radius:10px;
-      padding:8px; width:260px; box-shadow:0 6px 18px rgba(0,0,0,0.06);
-    }
-    .searchBox input {
-      width:100%; padding:8px; box-sizing:border-box;
-      border:1px solid #ddd; border-radius:8px; outline:none;
-    }
-    .searchBox input:focus { border-color:#b9b9b9; }
-    #suggestions {
-      margin-top:6px; border:1px solid #eee; border-radius:8px;
-      overflow:hidden; display:none; background:#fff; max-height:240px; overflow-y:auto;
-    }
-    .suggestion { cursor:pointer; padding:8px 10px; font-size:13px; }
-    .suggestion:hover { background:#f2f2f2; }
-
-    /* un peu plus compact sur petits écrans */
-    @media (max-width: 520px) {
-      .panel { width:210px; }
-      .searchBox { width:220px; }
-      .afficher { width:160px; }
-      .subtitle { display:none; }
-    }
+    header{display:flex;justify-content:space-between;align-items:center;padding:0 12px;background:#fff;border-bottom:1px solid #e6e6e6;}
+    .brand{display:flex;gap:10px;align-items:baseline;}
+    .title{font-weight:750;font-size:18px;}
+    .subtitle{font-size:12px;color:#666;}
+    .toplinks a{margin-left:6px;text-decoration:none;border:1px solid #ddd;border-radius:8px;padding:4px 7px;background:#fff;}
+    .toplinks a:hover{background:#f6f6f6;}
+    #map{width:100%;height:100%;}
+    .panel{position:absolute;left:12px;top:70px;z-index:1000;background:#fff;border:1px solid #cfcfcf;border-radius:10px;padding:10px;width:250px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
+    .panel button{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cfcfcf;background:#fff;cursor:pointer;font-weight:600;}
+    .panel button:hover{background:#f6f6f6;}
+    .status{margin-top:8px;font-size:12px;line-height:1.35;color:#333;}
+    .afficher{position:absolute;right:12px;top:70px;z-index:1000;background:#fff;border:1px solid #cfcfcf;border-radius:10px;padding:10px;width:170px;box-shadow:0 6px 18px rgba(0,0,0,0.06);font-size:13px;}
+    .searchBox{position:absolute;right:12px;bottom:18px;z-index:1000;background:#fff;border:1px solid #cfcfcf;border-radius:10px;padding:8px;width:260px;box-shadow:0 6px 18px rgba(0,0,0,0.06);}
+    .searchBox input{width:100%;padding:8px;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;outline:none;}
+    .searchBox input:focus{border-color:#b9b9b9;}
+    #suggestions{margin-top:6px;border:1px solid #eee;border-radius:8px;overflow:hidden;display:none;background:#fff;max-height:240px;overflow-y:auto;}
+    .suggestion{cursor:pointer;padding:8px 10px;font-size:13px;}
+    .suggestion:hover{background:#f2f2f2;}
+    @media (max-width:520px){.panel{width:210px}.searchBox{width:220px}.afficher{width:160px}.subtitle{display:none}}
   </style>
 </head>
 
@@ -111,12 +69,8 @@
 </div>
 
 <script type="module">
-  /********************
-   * CONFIG (robuste GitHub Pages)
-   ********************/
   const SITE_BASE   = "/nopb";
   const DUCKDB_DIST = `${SITE_BASE}/vendor/duckdb/1.28.0/dist`;
-
   const PLAN_PARQUET   = `${SITE_BASE}/data/planDeau.parquet`;
   const TAMPON_PARQUET = `${SITE_BASE}/data/planDeau_tampon_100m.parquet`;
 
@@ -124,31 +78,27 @@
   const setStatus = (s) => statusEl.textContent = s;
 
   /********************
-   * MAP (Leaflet)
+   * LEAFLET
    ********************/
-  const map = L.map("map", { zoomControl: false }).setView([46.6, 2.4], 6);
+  const map = L.map("map", { zoomControl:false }).setView([46.6, 2.4], 6);
 
   const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
-
+    { maxZoom:19, attribution:"&copy; OpenStreetMap" }).addTo(map);
   const carto = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-    { maxZoom: 20, attribution: "&copy; OSM &copy; CARTO" });
-
-  const esri  = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    { maxZoom: 19, attribution: "Tiles &copy; Esri" });
+    { maxZoom:20, attribution:"&copy; OSM &copy; CARTO" });
+  const esri = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom:19, attribution:"Tiles &copy; Esri" });
 
   L.control.layers(
     { "OSM (défaut)": osm, "CARTO Light": carto, "Esri Satellite": esri },
     {},
-    { collapsed: true, position: "bottomleft" }
+    { collapsed:true, position:"bottomleft" }
   ).addTo(map);
 
   map.createPane("tampon"); map.getPane("tampon").style.zIndex = 410;
   map.createPane("plan");   map.getPane("plan").style.zIndex = 420;
 
-  // Auto-locate au chargement (accélère la première vue)
   setTimeout(() => { try { map.locate({ setView:true, maxZoom:14, enableHighAccuracy:false, timeout:8000 }); } catch {} }, 350);
-
   document.getElementById("btnLocate").onclick = () =>
     map.locate({ setView:true, maxZoom:16, enableHighAccuracy:true, timeout:12000 });
 
@@ -162,141 +112,195 @@
   const sug = document.getElementById("suggestions");
   let banTimer = null;
 
-  function clearSug() { sug.innerHTML = ""; sug.style.display = "none"; }
-
-  function showSug(features) {
-    sug.innerHTML = "";
-    if (!features?.length) return clearSug();
-    for (const f of features) {
-      const div = document.createElement("div");
-      div.className = "suggestion";
-      div.textContent = f.properties?.label || "Commune";
-      div.onclick = () => {
+  function clearSug(){ sug.innerHTML=""; sug.style.display="none"; }
+  function showSug(features){
+    sug.innerHTML="";
+    if(!features?.length) return clearSug();
+    for(const f of features){
+      const div=document.createElement("div");
+      div.className="suggestion";
+      div.textContent=f.properties?.label || "Commune";
+      div.onclick=() => {
         clearSug();
-        const [lon, lat] = f.geometry.coordinates;
-        map.setView([lat, lon], 13);
+        const [lon,lat]=f.geometry.coordinates;
+        map.setView([lat,lon],13);
         setStatus(`Zoom sur : ${div.textContent}`);
       };
       sug.appendChild(div);
     }
-    sug.style.display = "block";
+    sug.style.display="block";
   }
 
   inp.addEventListener("input", () => {
-    const q = inp.value.trim();
-    if (banTimer) clearTimeout(banTimer);
-    if (q.length < 3) return clearSug();
-    banTimer = setTimeout(async () => {
-      try {
-        const r = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&type=municipality&autocomplete=1&limit=8`);
-        const j = await r.json();
+    const q=inp.value.trim();
+    if(banTimer) clearTimeout(banTimer);
+    if(q.length<3) return clearSug();
+    banTimer=setTimeout(async () => {
+      try{
+        const r=await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&type=municipality&autocomplete=1&limit=8`);
+        const j=await r.json();
         showSug(j.features);
-      } catch (e) {
+      }catch(e){
         console.warn(e);
         clearSug();
         setStatus("Recherche commune indisponible (BAN).");
       }
-    }, 220);
+    },220);
   });
-  inp.addEventListener("blur", () => setTimeout(clearSug, 200));
+  inp.addEventListener("blur", () => setTimeout(clearSug,200));
 
   /********************
-   * DUCKDB-WASM (MVP ONLY)
+   * WKB → GeoJSON (Polygon/MultiPolygon)
+   ********************/
+  function readUInt32(dv, o, le){ return dv.getUint32(o, le); }
+  function readDouble(dv, o, le){ return dv.getFloat64(o, le); }
+
+  function parseWKB(uint8){
+    const dv = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
+    let o = 0;
+    const le = dv.getUint8(o) === 1; o += 1;
+    const type = readUInt32(dv, o, le); o += 4;
+
+    // WKB types: 3=Polygon, 6=MultiPolygon
+    if(type === 3){
+      const nr = readUInt32(dv, o, le); o += 4;
+      const rings = [];
+      for(let r=0;r<nr;r++){
+        const np = readUInt32(dv, o, le); o += 4;
+        const ring = new Array(np);
+        for(let i=0;i<np;i++){
+          const x = readDouble(dv, o, le); o += 8;
+          const y = readDouble(dv, o, le); o += 8;
+          ring[i] = [x, y];
+        }
+        rings.push(ring);
+      }
+      return { type:"Polygon", coordinates:rings };
+    }
+
+    if(type === 6){
+      const n = readUInt32(dv, o, le); o += 4;
+      const polys = [];
+      for(let p=0;p<n;p++){
+        // chaque polygon est lui-même un WKB complet
+        const subLe = dv.getUint8(o) === 1;
+        // type + rings
+        const subType = dv.getUint32(o+1, subLe);
+        if(subType !== 3) throw new Error("MultiPolygon contient un type non-Polygon");
+        const subLenStart = o; // on parse en avançant o
+        o += 1 + 4;
+        const nr = dv.getUint32(o, subLe); o += 4;
+        const rings = [];
+        for(let r=0;r<nr;r++){
+          const np = dv.getUint32(o, subLe); o += 4;
+          const ring = new Array(np);
+          for(let i=0;i<np;i++){
+            const x = dv.getFloat64(o, subLe); o += 8;
+            const y = dv.getFloat64(o, subLe); o += 8;
+            ring[i] = [x,y];
+          }
+          rings.push(ring);
+        }
+        polys.push(rings);
+      }
+      return { type:"MultiPolygon", coordinates:polys };
+    }
+
+    throw new Error(`WKB type non géré: ${type} (attendu Polygon=3 ou MultiPolygon=6)`);
+  }
+
+  /********************
+   * DUCKDB-WASM (MVP ONLY) + Parquet
    ********************/
   import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/+esm";
 
-  async function assertOk(url, label) {
-    const r = await fetch(url, { method: "GET" });
-    if (!r.ok) throw new Error(`${label} introuvable : ${url} (HTTP ${r.status})`);
-    return true;
+  async function assertOk(url, label){
+    const r = await fetch(url, { method:"GET" });
+    if(!r.ok) throw new Error(`${label} introuvable : ${url} (HTTP ${r.status})`);
   }
 
   const MVP_WASM   = `${DUCKDB_DIST}/duckdb-mvp.wasm`;
   const MVP_WORKER = `${DUCKDB_DIST}/duckdb-browser-mvp.worker.js`;
 
-  try {
-    setStatus("Vérification fichiers DuckDB…");
+  let tamponLayer = null;
+  let planLayer = null;
+
+  async function parquetToLayer(db, conn, url, pane, style){
+    // on enregistre le fichier parquet dans le FS WASM
+    const ab = await (await fetch(url)).arrayBuffer();
+    await db.registerFileBuffer(url, new Uint8Array(ab));
+
+    // On lit uniquement geometry ; le reste tu peux l’ajouter ensuite
+    const res = await conn.query(`
+      SELECT geometry
+      FROM read_parquet('${url}')
+      WHERE geometry IS NOT NULL
+    `);
+
+    const geomCol = res.getChild("geometry");
+    const feats = [];
+
+    for(let i=0; i<res.numRows; i++){
+      const v = geomCol.get(i);
+      if(!v) continue;
+
+      // DuckDB/Arrow renvoie généralement un Uint8Array pour un BLOB
+      const bytes = (v instanceof Uint8Array) ? v : new Uint8Array(v);
+      const geom = parseWKB(bytes);
+
+      feats.push({ type:"Feature", properties:{}, geometry:geom });
+    }
+
+    return L.geoJSON({ type:"FeatureCollection", features:feats }, {
+      pane,
+      style: () => style
+    });
+  }
+
+  try{
+    setStatus("Vérification DuckDB…");
     await assertOk(MVP_WORKER, "Worker");
     await assertOk(MVP_WASM, "WASM");
 
     setStatus("Démarrage DuckDB (MVP)…");
-    const worker = new Worker(MVP_WORKER); // worker classique (pas module)
+    const worker = new Worker(MVP_WORKER);
     const db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
     await db.instantiate(MVP_WASM);
     const conn = await db.connect();
 
-    // IMPORTANT pour extensions en WASM : utiliser des répertoires existants
-    setStatus("Préparation environnement…");
-    await conn.query("SET home_directory='/'");
-    await conn.query("SET extension_directory='/'");
-
-    // Extension spatial
-    setStatus("Installation extension spatial…");
-    await conn.query("INSTALL spatial;");
-    setStatus("Chargement extension spatial…");
-    await conn.query("LOAD spatial;");
-
-    // Lecture parquet -> GeoJSON via spatial (ST_GeomFromWKB + ST_AsGeoJSON)
-    async function parquetToLayer(url, pane, style) {
-      const ab = await (await fetch(url)).arrayBuffer();
-      const buf = new Uint8Array(ab);
-      await db.registerFileBuffer(url, buf);
-
-      const r = await conn.query(`
-        SELECT ST_AsGeoJSON(ST_GeomFromWKB(geometry)) AS g
-        FROM read_parquet('${url}')
-        WHERE geometry IS NOT NULL
-      `);
-
-      const feats = [];
-      const col = r.getChild("g");
-      for (let i = 0; i < r.numRows; i++) {
-        const gj = col.get(i);
-        if (!gj) continue;
-        feats.push({ type: "Feature", properties: {}, geometry: JSON.parse(gj) });
-      }
-
-      return L.geoJSON({ type:"FeatureCollection", features: feats }, {
-        pane,
-        style: () => style
-      }).addTo(map);
-    }
-
     setStatus("Chargement : tampon 100 m…");
-    const tampon = await parquetToLayer(TAMPON_PARQUET, "tampon", {
-      color: "#1f6feb", weight: 1, fillColor: "#1f6feb", fillOpacity: 0.30, opacity: 0.85
+    tamponLayer = await parquetToLayer(db, conn, TAMPON_PARQUET, "tampon", {
+      color:"#1f6feb", weight:1, fillColor:"#1f6feb", fillOpacity:0.30, opacity:0.85
     });
+    tamponLayer.addTo(map);
 
     setStatus("Chargement : plans d’eau…");
-    const plan = await parquetToLayer(PLAN_PARQUET, "plan", {
-      color: "#1f6feb", weight: 1.4, fillColor: "#1f6feb", fillOpacity: 0.55, opacity: 0.95
+    planLayer = await parquetToLayer(db, conn, PLAN_PARQUET, "plan", {
+      color:"#1f6feb", weight:1.4, fillColor:"#1f6feb", fillOpacity:0.55, opacity:0.95
     });
+    planLayer.addTo(map);
 
     document.getElementById("chkTampon").onchange = (e) =>
-      e.target.checked ? map.addLayer(tampon) : map.removeLayer(tampon);
-
+      e.target.checked ? map.addLayer(tamponLayer) : map.removeLayer(tamponLayer);
     document.getElementById("chkPlan").onchange = (e) =>
-      e.target.checked ? map.addLayer(plan) : map.removeLayer(plan);
+      e.target.checked ? map.addLayer(planLayer) : map.removeLayer(planLayer);
 
-    // Fit bounds
-    const b = tampon.getBounds();
-    if (b?.isValid()) b.extend(plan.getBounds());
-    if (b?.isValid()) map.fitBounds(b, { padding: [20, 20] });
+    const b = tamponLayer.getBounds();
+    if(b?.isValid()) b.extend(planLayer.getBounds());
+    if(b?.isValid()) map.fitBounds(b, { padding:[20,20] });
 
-    setStatus("OK – Parquet chargé.");
+    setStatus("OK – Parquet chargé (WKB décodé).");
 
-    // Nettoyage à la fermeture
     window.addEventListener("beforeunload", async () => {
       try { await conn.close(); } catch {}
       try { await db.terminate(); } catch {}
       try { worker.terminate(); } catch {}
     });
 
-  } catch (err) {
+  }catch(err){
     console.error(err);
-    setStatus("Erreur DuckDB (voir console).");
+    setStatus("Erreur (voir console).");
   }
 </script>
-
 </body>
 </html>
