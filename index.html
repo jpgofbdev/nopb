@@ -153,12 +153,11 @@ const db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
 await db.instantiate(bundle.mainModule);
 const conn = await db.connect();
 
-await db.registerFileText("tmp/.keep", "");
-
-await conn.query("SET home_directory='tmp';");
-
+await conn.query("SET home_directory='/'");
+await conn.query("SET extension_directory='/'");
 await conn.query("INSTALL spatial;");
 await conn.query("LOAD spatial;");
+
 
 
   
