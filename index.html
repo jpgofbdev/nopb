@@ -3,375 +3,185 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NoPb – aperçu</title>
+  <title>NoPb – Plans d’eau</title>
 
-  <!-- Evite un 404 favicon.ico en dev -->
   <link rel="icon" href="data:,">
 
   <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          crossorigin=""></script>
 
   <style>
-    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    #app { height: 100%; display: grid; grid-template-rows: 52px 1fr; }
+    html, body { height:100%; margin:0; font-family:system-ui, sans-serif; }
+    #app { height:100%; display:grid; grid-template-rows:52px 1fr; }
     header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 12px; background: #ffffff; border-bottom: 1px solid #e6e6e6;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:0 12px; background:#fff; border-bottom:1px solid #e6e6e6;
     }
-    .brand { display: flex; align-items: baseline; gap: 10px; }
-    .brand .title { font-weight: 700; font-size: 18px; }
-    .brand .subtitle { font-size: 12px; color: #666; }
-    .toplinks { display: flex; align-items: center; gap: 10px; }
+    .brand { display:flex; gap:10px; align-items:baseline; }
+    .title { font-weight:700; font-size:18px; }
+    .subtitle { font-size:12px; color:#666; }
     .toplinks a {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 30px; height: 30px; border: 1px solid #ddd; border-radius: 6px;
-      text-decoration: none; color: #111; background: #fff;
+      margin-left:6px; text-decoration:none; border:1px solid #ddd;
+      border-radius:6px; padding:4px 6px;
     }
-    .toplinks a:hover { background: #f5f5f5; }
-    #map { height: 100%; width: 100%; }
+    #map { width:100%; height:100%; }
 
-    /* Left controls */
     .panel {
-      position: absolute; left: 12px; top: 70px; z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      border: 1px solid #dcdcdc; border-radius: 8px;
-      padding: 10px; width: 240px;
-      box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+      position:absolute; left:12px; top:70px; z-index:1000;
+      background:#fff; border:1px solid #ccc; border-radius:8px;
+      padding:10px; width:220px;
     }
-    .panel .btn {
-      width: 100%; cursor: pointer;
-      border: 1px solid #cfcfcf; border-radius: 6px; background: #fff;
-      padding: 7px 10px; font-weight: 600;
+    .panel button {
+      width:100%; padding:6px; border-radius:6px;
+      border:1px solid #ccc; cursor:pointer;
     }
-    .panel .btn:hover { background: #f5f5f5; }
-    .panel .status { margin-top: 8px; font-size: 12px; color: #444; line-height: 1.35; }
-    .panel .hint { margin-top: 6px; font-size: 11px; color: #666; }
+    .status { margin-top:6px; font-size:12px; }
 
-    /* Search box moved to bottom-right to avoid masking basemap control (bottom-left) */
-    .searchBox {
-      position: absolute; right: 12px; bottom: 18px; z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      border: 1px solid #dcdcdc; border-radius: 8px;
-      padding: 8px; width: 240px;
-      box-shadow: 0 1px 8px rgba(0,0,0,0.08);
-    }
-    .searchBox input {
-      width: 100%; box-sizing: border-box;
-      border: 1px solid #cfcfcf; border-radius: 6px; padding: 7px 10px;
-      font-size: 13px;
-    }
-    #suggestions {
-      display: none; margin-top: 6px;
-      border: 1px solid #e2e2e2; border-radius: 6px; overflow: hidden;
-      max-height: 220px; overflow-y: auto; background: #fff;
-    }
-    .suggestion { padding: 7px 10px; font-size: 13px; cursor: pointer; }
-    .suggestion:hover { background: #f2f2f2; }
-
-    /* Right overlay control */
     .afficher {
-      position: absolute; right: 12px; top: 70px; z-index: 1000;
-      background: rgba(255,255,255,0.95);
-      border: 1px solid #dcdcdc; border-radius: 8px;
-      padding: 10px; width: 160px;
-      box-shadow: 0 1px 8px rgba(0,0,0,0.08);
-      font-size: 13px;
+      position:absolute; right:12px; top:70px; z-index:1000;
+      background:#fff; border:1px solid #ccc; border-radius:8px;
+      padding:10px; width:150px; font-size:13px;
     }
-    .afficher .lbl { font-weight: 700; margin-bottom: 6px; display: block; }
-    .chkRow { display: flex; align-items: center; gap: 6px; margin: 6px 0; user-select: none; }
 
-    .leaflet-control-layers { font-size: 12px; }
+    .searchBox {
+      position:absolute; right:12px; bottom:18px; z-index:1000;
+      background:#fff; border:1px solid #ccc; border-radius:8px;
+      padding:8px; width:220px;
+    }
+    .searchBox input { width:100%; padding:6px; }
+    #suggestions { margin-top:6px; }
+    .suggestion { cursor:pointer; padding:4px; }
+    .suggestion:hover { background:#eee; }
   </style>
 </head>
 
 <body>
-  <div id="app">
-    <header>
-      <div class="brand">
-        <div class="title">🧪 NoPb</div>
-        <div class="subtitle">Aperçu minimal (fallback GeoJSON en dev)</div>
-      </div>
-      <div class="toplinks">
-        <a id="docLink" href="#" title="Documentation">📖</a>
-        <a id="aboutLink" href="#" title="À propos">ℹ️</a>
-      </div>
-    </header>
+<div id="app">
+<header>
+  <div class="brand">
+    <div class="title">🧪 NoPb</div>
+    <div class="subtitle">Parquet client-side</div>
+  </div>
+  <div class="toplinks">
+    <a href="./documentation.html">📖</a>
+    <a href="./apropos.html">ℹ️</a>
+  </div>
+</header>
 
-    <div style="position:relative">
-      <div id="map"></div>
+<div style="position:relative">
+  <div id="map"></div>
 
-      <div class="panel">
-        <button class="btn" id="btnLocate">📍 Localisez-moi</button>
-        <div class="status" id="status">Prêt.</div>
-        <div class="hint" id="modeHint"></div>
-      </div>
-
-      <div class="afficher">
-        <span class="lbl">Afficher :</span>
-        <div id="afficherBox"></div>
-      </div>
-
-      <div class="searchBox">
-        <input id="communeInput" type="text" placeholder="Commune" autocomplete="off" />
-        <div id="suggestions"></div>
-      </div>
-    </div>
+  <div class="panel">
+    <button id="btnLocate">📍 Localisez-moi</button>
+    <div class="status" id="status">Chargement…</div>
   </div>
 
-  <script type="module">
-    // -----------------------------
-    // Config (paths + links)
-    // -----------------------------
-    const PLAN_PARQUET_URL   = "./data/planDeau.parquet";
-    const TAMPON_PARQUET_URL = "./data/planDeau_tampon_100m.parquet";
+  <div class="afficher">
+    <b>Afficher :</b><br>
+    <label><input type="checkbox" id="chkTampon" checked> tampon 100 m</label><br>
+    <label><input type="checkbox" id="chkPlan" checked> plans d’eau</label>
+  </div>
 
-    // fallback GeoJSON for Live Server design work
-    const PLAN_GEOJSON_URL   = "./data/planDeau.geojson";
-    const TAMPON_GEOJSON_URL = "./data/planDeau_tampon_100m.geojson";
+  <div class="searchBox">
+    <input id="communeInput" placeholder="Commune">
+    <div id="suggestions"></div>
+  </div>
+</div>
+</div>
 
-    const DOC_URL   = "./documentation.html";
-    const ABOUT_URL = "./apropos.html";
+<script type="module">
+/* ================= CONFIG ================= */
+const DUCKDB_DIST = "./vendor/duckdb/1.28.0/dist";
+const PLAN_PARQUET = "./data/planDeau.parquet";
+const TAMPON_PARQUET = "./data/planDeau_tampon_100m.parquet";
 
-    // -----------------------------
-    // UI helpers
-    // -----------------------------
-    const $ = (id) => document.getElementById(id);
-    const setStatus = (msg) => { $("status").textContent = msg; };
-    const setModeHint = (msg) => { $("modeHint").textContent = msg; };
+/* ================= MAP ================= */
+const map = L.map("map", { zoomControl:false }).setView([46.6, 2.4], 6);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  { maxZoom:19 }).addTo(map);
 
-    $("docLink").href = DOC_URL;
-    $("aboutLink").href = ABOUT_URL;
+map.createPane("tampon"); map.getPane("tampon").style.zIndex = 410;
+map.createPane("plan");   map.getPane("plan").style.zIndex = 420;
 
-    // -----------------------------
-    // Map base (zoom +/- removed)
-    // -----------------------------
-    const map = L.map("map", { zoomControl: false }).setView([46.6, 2.4], 6);
+map.locate({ setView:true, maxZoom:14 });
 
-    const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap"
-    }).addTo(map);
+document.getElementById("btnLocate").onclick = () =>
+  map.locate({ setView:true, maxZoom:16 });
 
-    const carto = L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 20,
-      attribution: "&copy; OpenStreetMap &copy; CARTO"
-    });
+/* ================= BAN ================= */
+const box = document.getElementById("suggestions");
+document.getElementById("communeInput").oninput = async e => {
+  if (e.target.value.length < 3) return box.innerHTML="";
+  const r = await fetch(
+    `https://api-adresse.data.gouv.fr/search/?q=${e.target.value}&type=municipality`
+  );
+  const j = await r.json();
+  box.innerHTML = "";
+  j.features.forEach(f => {
+    const d = document.createElement("div");
+    d.className = "suggestion";
+    d.textContent = f.properties.label;
+    d.onclick = () => {
+      map.setView([f.geometry.coordinates[1], f.geometry.coordinates[0]], 13);
+      box.innerHTML = "";
+    };
+    box.appendChild(d);
+  });
+};
 
-    const esri = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-      maxZoom: 19,
-      attribution: "Tiles &copy; Esri"
-    });
+/* ================= DUCKDB ================= */
+import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/+esm";
 
-    const baseLayers = { "OSM (défaut)": osm, "CARTO Light": carto, "Esri Satellite": esri };
-    L.control.layers(baseLayers, {}, { collapsed: true, position: "bottomleft" }).addTo(map);
+const bundles = {
+  mvp: {
+    mainModule: `${DUCKDB_DIST}/duckdb-mvp.wasm`,
+    mainWorker: `${DUCKDB_DIST}/duckdb-browser-mvp.worker.js`
+  },
+  eh: {
+    mainModule: `${DUCKDB_DIST}/duckdb-eh.wasm`,
+    mainWorker: `${DUCKDB_DIST}/duckdb-browser-eh.worker.js`
+  }
+};
 
-    // panes for consistent z-order
-    map.createPane("tamponPane"); map.getPane("tamponPane").style.zIndex = 410;
-    map.createPane("planPane");   map.getPane("planPane").style.zIndex = 420;
+const bundle = await duckdb.selectBundle(bundles);
+const worker = new Worker(bundle.mainWorker, { type:"module" });
+const db = new duckdb.AsyncDuckDB(new duckdb.ConsoleLogger(), worker);
+await db.instantiate(bundle.mainModule);
+const conn = await db.connect();
+await conn.query("INSTALL spatial; LOAD spatial;");
 
-    // -----------------------------
-    // Geolocate
-    // -----------------------------
-    // Auto-localisation au chargement (accélère l'affichage)
-    setTimeout(() => {
-      try {
-        map.locate({ setView: true, maxZoom: 14, enableHighAccuracy: false, timeout: 8000 });
-        setStatus("Localisation automatique…");
-      } catch (e) {}
-    }, 400);
+async function loadParquet(url, pane, style) {
+  const buf = new Uint8Array(await (await fetch(url)).arrayBuffer());
+  await db.registerFileBuffer(url, buf);
+  const r = await conn.query(`
+    SELECT ST_AsGeoJSON(ST_GeomFromWKB(geometry)) g
+    FROM read_parquet('${url}')
+  `);
+  const feats = [];
+  const col = r.getChild("g");
+  for (let i=0;i<r.numRows;i++)
+    feats.push({ type:"Feature", geometry:JSON.parse(col.get(i)), properties:{} });
+  return L.geoJSON({ type:"FeatureCollection", features:feats },
+    { pane, style }).addTo(map);
+}
 
-    $("btnLocate").addEventListener("click", () => {
-      setStatus("Localisation…");
-      map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true, timeout: 12000 });
-    });
-    map.on("locationfound", (e) => {
-      setStatus(`Position trouvée (±${Math.round(e.accuracy)} m)`);
-      if (window._meMarker) map.removeLayer(window._meMarker);
-      window._meMarker = L.circleMarker(e.latlng, { radius: 7 }).addTo(map);
-    });
-    map.on("locationerror", (e) => {
-      setStatus("Localisation impossible (autorisation refusée ou signal indisponible).");
-      console.warn(e);
-    });
+const tampon = await loadParquet(TAMPON_PARQUET, "tampon",
+  { color:"#1f6feb", fillOpacity:0.3 });
+const plan = await loadParquet(PLAN_PARQUET, "plan",
+  { color:"#1f6feb", fillOpacity:0.55 });
 
-    // -----------------------------
-    // Commune search (BAN)
-    // -----------------------------
-    const communeInput = $("communeInput");
-    const suggestBox = $("suggestions");
+document.getElementById("chkTampon").onchange = e =>
+  e.target.checked ? map.addLayer(tampon) : map.removeLayer(tampon);
+document.getElementById("chkPlan").onchange = e =>
+  e.target.checked ? map.addLayer(plan) : map.removeLayer(plan);
 
-    async function banSearch(q) {
-      const url = `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(q)}&type=municipality&autocomplete=1&limit=8`;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error("BAN non disponible");
-      return await resp.json();
-    }
-    function clearSuggestions() { suggestBox.innerHTML = ""; suggestBox.style.display = "none"; }
-    function showSuggestions(features) {
-      suggestBox.innerHTML = "";
-      if (!features?.length) { clearSuggestions(); return; }
-      for (const f of features) {
-        const name = f.properties?.label || f.properties?.name || "Commune";
-        const li = document.createElement("div");
-        li.className = "suggestion";
-        li.textContent = name;
-        li.addEventListener("click", () => {
-          clearSuggestions();
-          communeInput.value = name;
-          const [lon, lat] = f.geometry.coordinates;
-          map.setView([lat, lon], 13);
-          setStatus(`Zoom sur : ${name}`);
-        });
-        suggestBox.appendChild(li);
-      }
-      suggestBox.style.display = "block";
-    }
-    let _banTimer = null;
-    communeInput.addEventListener("input", () => {
-      const q = communeInput.value.trim();
-      if (_banTimer) clearTimeout(_banTimer);
-      if (q.length < 3) { clearSuggestions(); return; }
-      _banTimer = setTimeout(async () => {
-        try { const j = await banSearch(q); showSuggestions(j.features); }
-        catch (err) { console.warn(err); clearSuggestions(); setStatus("Recherche commune indisponible (BAN)."); }
-      }, 200);
-    });
-    communeInput.addEventListener("blur", () => setTimeout(clearSuggestions, 200));
-
-    // -----------------------------
-    // Layer toggles ("Afficher")
-    // -----------------------------
-    const box = $("afficherBox");
-    function addCheckbox(label, checked, onChange) {
-      const row = document.createElement("label");
-      row.className = "chkRow";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = checked;
-      cb.addEventListener("change", () => onChange(cb.checked));
-      const span = document.createElement("span");
-      span.textContent = " " + label;
-      row.appendChild(cb); row.appendChild(span);
-      box.appendChild(row);
-      return cb;
-    }
-
-    // Styles
-    const stylePlan = { color: "#1f6feb", weight: 1.5, fillColor: "#1f6feb", fillOpacity: 0.55 };
-    const styleTampon = { color: "#1f6feb", weight: 1, fillColor: "#1f6feb", fillOpacity: 0.30, opacity: 0.8 };
-
-    // -----------------------------
-    // Fallback GeoJSON loader
-    // -----------------------------
-    async function loadGeoJSONLayer(url, paneName, style) {
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`Impossible de charger ${url}`);
-      const geojson = await resp.json();
-      return L.geoJSON(geojson, { pane: paneName, style: () => style }).addTo(map);
-    }
-
-    // -----------------------------
-    // Try DuckDB Parquet first, else fallback to GeoJSON
-    // -----------------------------
-    async function tryLoadWithDuckDB() {
-      setStatus("Initialisation DuckDB…");
-      const duckdb = await import("https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/+esm");
-
-      const DUCKDB_BUNDLES = duckdb.getJsDelivrBundles();
-      const bundle = await duckdb.selectBundle(DUCKDB_BUNDLES);
-
-      // IMPORTANT: this is exactly what fails under Live Server in many setups
-      const worker = new Worker(bundle.mainWorker, { type: "module" });
-
-      const logger = new duckdb.ConsoleLogger();
-      const db = new duckdb.AsyncDuckDB(logger, worker);
-      await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
-      const conn = await db.connect();
-      await conn.query("INSTALL spatial; LOAD spatial;");
-
-      async function loadGeoParquetAsGeoJSON(url, tableName) {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Impossible de charger ${url}`);
-        const buf = new Uint8Array(await res.arrayBuffer());
-        await db.registerFileBuffer(tableName, buf);
-
-        const q = `
-          SELECT ST_AsGeoJSON(ST_GeomFromWKB(geometry)) AS g
-          FROM read_parquet('${tableName}')
-          WHERE geometry IS NOT NULL
-        `;
-        const r = await conn.query(q);
-
-        const features = [];
-        const gCol = r.getChild("g");
-        for (let i = 0; i < r.numRows; i++) {
-          const gj = gCol.get(i);
-          if (!gj) continue;
-          let geom = null;
-          try { geom = JSON.parse(gj); } catch { continue; }
-          features.push({ type: "Feature", properties: {}, geometry: geom });
-        }
-        return { type: "FeatureCollection", features };
-      }
-
-      async function addParquetLayer(url, label, paneName, style) {
-        const geojson = await loadGeoParquetAsGeoJSON(url, label.replace(/\s+/g, "_") + ".parquet");
-        const layer = L.geoJSON(geojson, { pane: paneName, style: () => style }).addTo(map);
-        return layer;
-      }
-
-      return { addParquetLayer, cleanup: async () => {
-        try { await conn.close(); } catch {}
-        try { await db.terminate(); } catch {}
-        try { worker.terminate(); } catch {}
-      }};
-    }
-
-    let cleanupDuckDB = null;
-
-    async function main() {
-      let tamponLayer = null;
-      let planLayer = null;
-
-      try {
-        const duck = await tryLoadWithDuckDB();
-        cleanupDuckDB = duck.cleanup;
-        setModeHint("Mode : Parquet (DuckDB-WASM).");
-        setStatus("Chargement : tampon 100 m (parquet)…");
-        tamponLayer = await duck.addParquetLayer(TAMPON_PARQUET_URL, "tampon 100m", "tamponPane", styleTampon);
-
-        setStatus("Chargement : plans d’eau (parquet)…");
-        planLayer = await duck.addParquetLayer(PLAN_PARQUET_URL, "plans d’eau", "planPane", stylePlan);
-
-      } catch (e) {
-        console.warn("DuckDB indisponible, fallback GeoJSON.", e);
-        console.warn("Vérifie que les fichiers .geojson existent bien dans ./data/ (GitHub Pages est sensible à la casse des noms de fichiers).");
-        setModeHint("Mode : GeoJSON (fallback – compatible Live Server).");
-        setStatus("Chargement : tampon 100 m (geojson)…");
-        tamponLayer = await loadGeoJSONLayer(TAMPON_GEOJSON_URL, "tamponPane", styleTampon);
-
-        setStatus("Chargement : plans d’eau (geojson)…");
-        planLayer = await loadGeoJSONLayer(PLAN_GEOJSON_URL, "planPane", stylePlan);
-      }
-
-      addCheckbox("tampon 100m", true, (v) => v ? map.addLayer(tamponLayer) : map.removeLayer(tamponLayer));
-      addCheckbox("plans d’eau", true, (v) => v ? map.addLayer(planLayer) : map.removeLayer(planLayer));
-
-      const b1 = tamponLayer.getBounds?.();
-      const b2 = planLayer.getBounds?.();
-      const b = (b1 && b1.isValid()) ? b1 : null;
-      if (b && b2 && b2.isValid()) b.extend(b2);
-      if (b && b.isValid()) map.fitBounds(b, { padding: [20, 20] });
-
-      setStatus("OK. Couches chargées.");
-    }
-
-    await main();
-
-    window.addEventListener("beforeunload", async () => {
-      if (cleanupDuckDB) { try { await cleanupDuckDB(); } catch {} }
-    });
-  </script>
+map.fitBounds(tampon.getBounds());
+document.getElementById("status").textContent = "OK – Parquet chargé";
+</script>
 </body>
 </html>
+
