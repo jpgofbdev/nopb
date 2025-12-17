@@ -155,7 +155,7 @@
   function readUInt32(dv, o, le){ return dv.getUint32(o, le); }
   function readDouble(dv, o, le){ return dv.getFloat64(o, le); }
 
-  function parseWKB(uint8){
+  function parseWKB(uint8) {
   const dv = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
   let o = 0;
 
@@ -163,41 +163,64 @@
 
   let type = dv.getUint32(o, le); o += 4;
 
-  // EWKB flags (PostGIS):
-  // 0x20000000 = SRID present
-  // 0x80000000 = Z
-  // 0x40000000 = M
-  const hasZ    = (type & 0x80000000) !== 0;
-  const hasM    = (type & 0x40000000) !== 0;
-  const hasSRID = (type & 0x20000000) !== 0;
+  // ---- Dimensions: EWKB flags (PostGIS) OR OGC type+1000/2000/3000 ----
+  const ewkbHasZ    = (type & 0x80000000) !== 0;
+  const ewkbHasM    = (type & 0x40000000) !== 0;
+  const ewkbHasSRID = (type & 0x20000000) !== 0;
 
-  const baseType = (type & 0x0fffffff);
+  let hasZ = ewkbHasZ;
+  let hasM = ewkbHasM;
+  let hasSRID = ewkbHasSRID;
 
-  // read SRID if present (we ignore it for display)
+  // EWKB base type
+  let baseType = (type & 0x0fffffff);
+
+  // OGC / SQL-MM: type + 1000/2000/3000
+  // 1000 => Z, 2000 => M, 3000 => ZM
+  if (type >= 3000 && type < 4000) {
+    hasZ = true; hasM = true; hasSRID = false;
+    baseType = type - 3000;
+  } else if (type >= 2000 && type < 3000) {
+    hasZ = false; hasM = true; hasSRID = false;
+    baseType = type - 2000;
+  } else if (type >= 1000 && type < 2000) {
+    hasZ = true; hasM = false; hasSRID = false;
+    baseType = type - 1000;
+  }
+
+  // SRID present only in EWKB
   if (hasSRID) { o += 4; }
 
   const dims = 2 + (hasZ ? 1 : 0) + (hasM ? 1 : 0);
 
-  function readPoint(){
+  function readPoint() {
     const x = dv.getFloat64(o, le); o += 8;
     const y = dv.getFloat64(o, le); o += 8;
     // skip Z/M if present
-    for (let k = 2; k < dims; k++) { o += 8; }
+    for (let k = 2; k < dims; k++) o += 8;
     return [x, y];
   }
 
-  function readPolygon(){
-    const nr = dv.getUint32(o, le); o += 4;
+  function readPolygonBody(localLE, localDims) {
+    // assumes cursor o is positioned right before numRings
+    const nr = dv.getUint32(o, localLE); o += 4;
     const rings = [];
-    for (let r=0; r<nr; r++){
-      const np = dv.getUint32(o, le); o += 4;
+    for (let r = 0; r < nr; r++) {
+      const np = dv.getUint32(o, localLE); o += 4;
       const ring = new Array(np);
-      for (let i=0; i<np; i++){
-        ring[i] = readPoint();
+      for (let i = 0; i < np; i++) {
+        const x = dv.getFloat64(o, localLE); o += 8;
+        const y = dv.getFloat64(o, localLE); o += 8;
+        for (let k = 2; k < localDims; k++) o += 8; // skip Z/M
+        ring[i] = [x, y];
       }
       rings.push(ring);
     }
     return rings;
+  }
+
+  function readPolygon() {
+    return readPolygonBody(le, dims);
   }
 
   if (baseType === 3) {
@@ -207,43 +230,59 @@
   if (baseType === 6) {
     const n = dv.getUint32(o, le); o += 4;
     const polys = [];
-    for (let p=0; p<n; p++){
-      // each polygon is a complete (E)WKB geometry
-      const subLe = dv.getUint8(o) === 1;
-      let subType = dv.getUint32(o+1, subLe);
 
-      const subHasZ    = (subType & 0x80000000) !== 0;
-      const subHasM    = (subType & 0x40000000) !== 0;
-      const subHasSRID = (subType & 0x20000000) !== 0;
-      const subBase    = (subType & 0x0fffffff);
-      if (subBase !== 3) throw new Error("MultiPolygon contient un type non-Polygon");
+    for (let p = 0; p < n; p++) {
+      // Each polygon is a complete (E)WKB geometry
+      const subLE = dv.getUint8(o) === 1;
 
-      // advance into sub-geometry
+      // Read subType (but do not advance cursor yet, we will advance properly)
+      let subType = dv.getUint32(o + 1, subLE);
+
+      // Determine sub geometry dims for BOTH conventions
+      const subEwkbHasZ    = (subType & 0x80000000) !== 0;
+      const subEwkbHasM    = (subType & 0x40000000) !== 0;
+      const subEwkbHasSRID = (subType & 0x20000000) !== 0;
+
+      let subHasZ = subEwkbHasZ;
+      let subHasM = subEwkbHasM;
+      let subHasSRID = subEwkbHasSRID;
+
+      let subBaseType = (subType & 0x0fffffff);
+
+      if (subType >= 3000 && subType < 4000) {
+        subHasZ = true; subHasM = true; subHasSRID = false;
+        subBaseType = subType - 3000;
+      } else if (subType >= 2000 && subType < 3000) {
+        subHasZ = false; subHasM = true; subHasSRID = false;
+        subBaseType = subType - 2000;
+      } else if (subType >= 1000 && subType < 2000) {
+        subHasZ = true; subHasM = false; subHasSRID = false;
+        subBaseType = subType - 1000;
+      }
+
+      if (subBaseType !== 3) {
+        throw new Error(`MultiPolygon contient un sous-type non Polygon (baseType=${subBaseType})`);
+      }
+
+      // Advance into sub-geometry: byteOrder + type
       o += 1 + 4;
-      if (subHasSRID) { o += 4; }
+
+      // Skip SRID if present (EWKB only)
+      if (subHasSRID) o += 4;
 
       const subDims = 2 + (subHasZ ? 1 : 0) + (subHasM ? 1 : 0);
 
-      const nr = dv.getUint32(o, subLe); o += 4;
-      const rings = [];
-      for (let r=0; r<nr; r++){
-        const np = dv.getUint32(o, subLe); o += 4;
-        const ring = new Array(np);
-        for (let i=0; i<np; i++){
-          const x = dv.getFloat64(o, subLe); o += 8;
-          const y = dv.getFloat64(o, subLe); o += 8;
-          for (let k=2; k<subDims; k++) { o += 8; }
-          ring[i] = [x, y];
-        }
-        rings.push(ring);
-      }
+      // Now read the polygon body at current cursor
+      const rings = readPolygonBody(subLE, subDims);
       polys.push(rings);
     }
+
     return { type: "MultiPolygon", coordinates: polys };
   }
 
   throw new Error(`WKB type non géré: ${type} (baseType=${baseType})`);
 }
+
 
 
   /********************
